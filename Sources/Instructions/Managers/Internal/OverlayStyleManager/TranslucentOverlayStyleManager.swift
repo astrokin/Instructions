@@ -68,12 +68,7 @@ class TranslucentOverlayStyleManager: OverlayStyleManager {
             if show {
                 self.overlayLayer.removeFromSuperlayer()
                 self.overlayLayer.frame = overlay.bounds
-                //force fix for gradient images from bottom to top or vice versa
-                //for non gradient images will not affect
-                if type(of: self.color) == NSClassFromString("UIDynamicPatternColor") {
-                    ///Core Graphics and iOS have flipped origins. iOS starts at the top left corner of the screen, and Core Graphics starts at the bottom left
-                    self.overlayLayer.transform = CATransform3DMakeScale(1, -1, 1)
-                }
+                self.fixColorFromPatternImageIfNeeded(for: self.overlayLayer)
                 self.overlayLayer.backgroundColor = self.color.cgColor
                 overlay.holder.layer.addSublayer(self.overlayLayer)
                 overlay.holder.backgroundColor = UIColor.clear
@@ -128,6 +123,7 @@ class TranslucentOverlayStyleManager: OverlayStyleManager {
 
         let maskLayer = CALayer()
         maskLayer.frame = overlayLayer.bounds
+        fixColorFromPatternImageIfNeeded(for: self.cutoutMaskLayer)
         maskLayer.addSublayer(self.cutoutMaskLayer)
         maskLayer.addSublayer(self.fullMaskLayer)
 
@@ -165,5 +161,17 @@ class TranslucentOverlayStyleManager: OverlayStyleManager {
         layer.name = OverlayView.sublayerName
 
         return layer
+    }
+    
+    /*
+      // Adjust for flipped origins between CG and iOS.
+      // iOS origin: top left. CG origin: bottom left.
+      // This fix ensures proper rendering of gradient images and cutout layers
+      // created with `init(patternImage image: UIImage)`.
+    */
+    private func fixColorFromPatternImageIfNeeded(for layer: CALayer) {
+        if type(of: self.color) == NSClassFromString("UIDynamicPatternColor") {
+            layer.transform = CATransform3DMakeScale(1, -1, 1)
+        }
     }
 }
