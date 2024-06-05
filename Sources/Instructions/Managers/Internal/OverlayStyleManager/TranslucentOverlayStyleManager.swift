@@ -68,6 +68,14 @@ class TranslucentOverlayStyleManager: OverlayStyleManager {
             if show {
                 self.overlayLayer.removeFromSuperlayer()
                 self.overlayLayer.frame = overlay.bounds
+                /*
+                  Fix for flipped origins: iOS (top-left) vs CG (bottom-left).
+                  Applies to gradient images from `init(patternImage:)`.
+                  Non-gradient images as background must not be used
+                */
+                if type(of: self.color) == NSClassFromString("UIDynamicPatternColor") {
+                    self.overlayLayer.transform = CATransform3DMakeScale(1, -1, 1)
+                }
                 self.overlayLayer.backgroundColor = self.color.cgColor
                 overlay.holder.layer.addSublayer(self.overlayLayer)
                 overlay.holder.backgroundColor = UIColor.clear
